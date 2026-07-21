@@ -645,6 +645,31 @@ const receivedPackets: ReceivedPacket[] = Array.from({ length: 42 }, (_, i) => {
   };
 });
 
+function exportReceivedPackets(packets: ReceivedPacket[]) {
+  const headers = ["meter", "date", "protocol", "signal_dbm", "antenna", "position_lat", "position_lon", "data"];
+  const rows = packets.map((packet) =>
+    [
+      packet.meter,
+      packet.time,
+      packet.protocol,
+      `${packet.signal}`,
+      packet.antenna,
+      packet.lat ? packet.lat.toFixed(6) : "0",
+      packet.lon ? packet.lon.toFixed(6) : "0",
+      packet.data,
+    ].map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")
+  );
+  const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `received-packets-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 type UploadMethod = "sftp" | "manager";
 type SessionConfirmAction =
   | { kind: "export"; codes: string[] }
@@ -1195,6 +1220,7 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
   const [recenterKey, setRecenterKey] = useState(0);
   const [zoom, setZoom] = useState(14);
   const [packetsPerSec, setPacketsPerSec] = useState(0);
+  const [packetOverlayOpen, setPacketOverlayOpen] = useState(false);
   const [devicePanelOpen, setDevicePanelOpen] = useState(false);
   const [deviceMessage, setDeviceMessage] = useState("");
   const [bluetoothConnected, setBluetoothConnected] = useState(false);
@@ -1872,8 +1898,8 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
         {selectedMeter ? (
           <MeterDetails meter={selectedMeter} onClose={() => setSelectedMeter(null)} />
         ) : (
-          <div className={`absolute top-4 right-4 w-[520px] max-w-[calc(100vw-32px)] flex flex-col gap-3 transition ${devicePanelOpen ? "z-0 pointer-events-none" : "z-10"}`}>
-            {/* Received packets - collapsible */}
+          <div className={`absolute top-4 right-4 w-64 flex flex-col gap-3 transition ${devicePanelOpen ? "z-0 pointer-events-none" : "z-10"}`}>
+            {/* Live statistics - collapsible */}
             <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 overflow-hidden">
               <button
                 onClick={() => setPacketsOpen((v) => !v)}
@@ -1883,12 +1909,12 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
                   <span className="w-7 h-7 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">
                     <Radio className="w-4 h-4" />
                   </span>
-                  <span className="font-semibold text-sm text-slate-900">Received Packets</span>
+                  <span className="font-semibold text-sm text-slate-900">Live Statistics</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1 text-[11px] text-emerald-600">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {fmt(receivedPackets.length)}
+                    {packetsPerSec}
                   </span>
                   <ChevronDown
                     className={`w-4 h-4 text-slate-400 transition-transform ${packetsOpen ? "rotate-180" : ""}`}
@@ -1896,87 +1922,112 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
                 </div>
               </button>
               {packetsOpen && (
-                <div className="border-t border-slate-100">
-                  <div className="flex items-center justify-between gap-3 px-4 py-3">
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="rounded-lg bg-slate-50 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">OMS</div>
-                        <div className="text-sm font-semibold text-slate-900">{receivedPackets.filter((p) => p.protocol === "OMS").length}</div>
-                      </div>
-                      <div className="rounded-lg bg-slate-50 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">SSRF</div>
-                        <div className="text-sm font-semibold text-slate-900">{receivedPackets.filter((p) => p.protocol === "SSRF").length}</div>
-                      </div>
-                      <div className="rounded-lg bg-slate-50 px-3 py-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Avg</div>
-                        <div className="text-sm font-semibold text-slate-900">-66 dBm</div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const headers = ["meter", "date", "protocol", "signal_dbm", "antenna", "position_lat", "position_lon", "data"];
-                        const rows = receivedPackets.map((packet) =>
-                          [
-                            packet.meter,
-                            packet.time,
-                            packet.protocol,
-                            `${packet.signal}`,
-                            packet.antenna,
-                            packet.lat ? packet.lat.toFixed(6) : "0",
-                            packet.lon ? packet.lon.toFixed(6) : "0",
-                            packet.data,
-                          ].map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")
-                        );
-                        const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement("a");
-                        link.href = url;
-                        link.download = `received-packets-${new Date().toISOString().slice(0, 10)}.csv`;
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                        URL.revokeObjectURL(url);
-                      }}
-                      className="flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-3 text-[12px] font-semibold text-white shadow-sm hover:bg-blue-700"
+                <div className="px-4 pb-3 border-t border-slate-100 pt-3 space-y-1.5 max-h-40 overflow-y-auto">
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between text-[11px] font-mono text-slate-600"
                     >
-                      <FileDown className="h-3.5 w-3.5" strokeWidth={1.8} />
-                      Export
-                    </button>
-                  </div>
-
-                  <div className="max-h-56 overflow-auto border-t border-slate-100">
-                    <table className="w-full min-w-[480px] text-left text-[11px]">
-                      <thead className="sticky top-0 bg-white text-[10px] uppercase tracking-wide text-slate-400 shadow-[inset_0_-1px_0_#e2e8f0]">
-                        <tr>
-                          <th className="px-3 py-2 font-semibold">Meter</th>
-                          <th className="px-3 py-2 font-semibold">Time</th>
-                          <th className="px-3 py-2 font-semibold">Type</th>
-                          <th className="px-3 py-2 text-right font-semibold">Signal</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {receivedPackets.slice(0, 18).map((packet, index) => (
-                          <tr key={`${packet.meter}-${packet.time}-${index}`} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 font-mono font-semibold text-slate-900">{packet.meter}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-slate-500">{packet.time.slice(11)}</td>
-                            <td className="px-3 py-2">
-                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${packet.protocol === "OMS" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                                {packet.protocol}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-right font-semibold text-slate-600">{packet.signal} dBm</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="border-t border-slate-100 px-4 py-2 text-center text-[11px] text-slate-400">
-                    Export includes raw packet data, antenna, and coordinates.
+                      <span>SN {fmt(48230011 + i * 7)}</span>
+                      <span className="text-slate-400">-{60 + i * 3} dBm</span>
+                    </div>
+                  ))}
+                  <div className="pt-2 mt-2 border-t border-slate-100 text-[11px] text-slate-400 text-center">
+                    Tap a meter on the map for details.
                   </div>
                 </div>
               )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPacketOverlayOpen(true)}
+              className="w-full bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 px-4 py-3 text-left hover:bg-slate-50/80 transition"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <Wifi className="w-4 h-4" />
+                  </span>
+                  <span className="font-semibold text-sm text-slate-900">Live pkts</span>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                  {receivedPackets.length}
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {packetOverlayOpen && (
+          <div className="absolute inset-0 z-50 bg-slate-950/45 backdrop-blur-[2px] p-6">
+            <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900">Live pkts</h2>
+                  <p className="mt-0.5 text-sm text-slate-500">Received packets from the active reading session.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => exportReceivedPackets(receivedPackets)}
+                    className="flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                  >
+                    <FileDown className="h-4 w-4" strokeWidth={1.8} />
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPacketOverlayOpen(false)}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                    aria-label="Close live packets"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3 border-b border-slate-100 bg-slate-50/70 p-4">
+                <PacketStat icon={Radio} label="Total packets" value={fmt(receivedPackets.length)} tone="blue" />
+                <PacketStat icon={Wifi} label="OMS received" value={fmt(receivedPackets.filter((p) => p.protocol === "OMS").length)} tone="emerald" />
+                <PacketStat icon={Satellite} label="SSRF received" value={fmt(receivedPackets.filter((p) => p.protocol === "SSRF").length)} tone="amber" />
+                <PacketStat icon={TrendingUp} label="Avg signal" value="-66 dBm" tone="cyan" />
+              </div>
+
+              <div className="flex-1 overflow-auto">
+                <table className="min-w-[1100px] w-full text-left text-xs">
+                  <thead className="sticky top-0 z-10 bg-white text-[11px] uppercase tracking-[0.08em] text-slate-500 shadow-[inset_0_-1px_0_#e2e8f0]">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Meter number</th>
+                      <th className="px-3 py-3 font-semibold">Date</th>
+                      <th className="px-3 py-3 font-semibold">Protocol</th>
+                      <th className="px-3 py-3 font-semibold">Signal</th>
+                      <th className="px-3 py-3 font-semibold">Antenna</th>
+                      <th className="px-3 py-3 font-semibold">Position</th>
+                      <th className="px-3 py-3 font-semibold">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {receivedPackets.map((packet, index) => (
+                      <tr key={`${packet.meter}-${packet.time}-${index}`} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-mono font-semibold text-slate-900">{packet.meter}</td>
+                        <td className="px-3 py-3 whitespace-nowrap text-slate-600">{packet.time}</td>
+                        <td className="px-3 py-3">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${packet.protocol === "OMS" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                            {packet.protocol}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 font-semibold text-slate-700">{packet.signal} dBm</td>
+                        <td className="px-3 py-3 text-slate-600">{packet.antenna}</td>
+                        <td className="px-3 py-3 font-mono text-slate-500">{packet.lat ? `${packet.lat.toFixed(4)}, ${packet.lon.toFixed(4)}` : "0, 0"}</td>
+                        <td className="max-w-[520px] px-3 py-3">
+                          <div className="truncate font-mono text-[11px] text-slate-600" title={packet.data}>{packet.data}</div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
