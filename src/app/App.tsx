@@ -387,9 +387,7 @@ export default function App() {
           <div className="relative shrink-0">
             <button
               onClick={() => setImportOpen((v) => !v)}
-              className={`relative flex items-center gap-[6px] px-[14px] py-[10px] rounded-[8px] bg-white transition-opacity ${
-                importOpen ? "opacity-0 pointer-events-none" : "opacity-100"
-              }`}
+              className="relative flex items-center gap-[6px] px-[14px] py-[10px] rounded-[8px] bg-white transition-opacity"
               style={{
                 boxShadow: "inset 0px 0px 0px 1px rgba(10,13,18,0.18), inset 0px -2px 0px 0px rgba(10,13,18,0.05), 0px 1px 2px 0px rgba(10,13,18,0.05)",
                 border: "1px solid #d5d7da",
