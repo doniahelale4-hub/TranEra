@@ -258,6 +258,7 @@ export default function App() {
   const [routes, setRoutes] = useState<Route[]>(initialRoutes);
   const [modalOpen, setModalOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [emptyImportOpen, setEmptyImportOpen] = useState(false);
   const [selectedImportSource, setSelectedImportSource] = useState<ImportSource>("routes");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"types" | "configure" | "map" | "settings" | "dashboard">("types");
@@ -298,6 +299,7 @@ export default function App() {
   function chooseImportSource(source: ImportSource) {
     setSelectedImportSource(source);
     setImportOpen(false);
+    setEmptyImportOpen(false);
     if (source === "manager") setModalOpen(true);
   }
 
@@ -460,29 +462,50 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="mx-auto mt-6 grid max-w-[560px] gap-2 sm:grid-cols-3">
-                {importSourceOptions.map((option) => {
-                  const OptionIcon = option.icon;
-                  const isActive = selectedImportSource === option.key;
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => chooseImportSource(option.key)}
-                      className={`flex h-[48px] items-center justify-center gap-2 rounded-[12px] px-4 text-[13px] font-semibold shadow-sm transition-all ${
-                        isActive
-                          ? "bg-blue-600 text-white hover:bg-blue-700"
-                          : "border border-[#dbe3ef] bg-white text-[#344054] hover:border-[#93c5fd] hover:bg-[#eff6ff]"
-                      }`}
-                    >
-                      <OptionIcon
-                        className={`size-4 ${isActive ? "text-white" : "text-[#155dfc]"}`}
-                        strokeWidth={1.8}
-                      />
-                      {option.label}
-                    </button>
-                  );
-                })}
+              <div className="relative mx-auto mt-6 w-full max-w-[300px]">
+                <button
+                  type="button"
+                  onClick={() => setEmptyImportOpen((open) => !open)}
+                  className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[12px] bg-blue-600 px-5 text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                >
+                  <HeaderImportIcon className="size-4 text-white" strokeWidth={1.8} />
+                  {selectedImportOption.label}
+                  <ChevronDown
+                    className={`size-4 text-white/80 transition-transform ${emptyImportOpen ? "rotate-180" : ""}`}
+                    strokeWidth={1.8}
+                  />
+                </button>
+
+                {emptyImportOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setEmptyImportOpen(false)} />
+                    <div className="absolute left-0 right-0 top-[56px] z-20 overflow-hidden rounded-[14px] border border-[#e2e8f0] bg-white text-left shadow-[0_20px_40px_-18px_rgba(15,23,42,0.35)]">
+                      {importSourceOptions.map((option, index) => {
+                        const OptionIcon = option.icon;
+                        return (
+                          <button
+                            key={option.key}
+                            type="button"
+                            onClick={() => chooseImportSource(option.key)}
+                            className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f8fafc] ${
+                              index > 0 ? "border-t border-[#f1f5f9]" : ""
+                            }`}
+                          >
+                            <OptionIcon className="mt-0.5 size-4 text-[#155DFC]" strokeWidth={1.75} />
+                            <span>
+                              <span className="block text-[14px] font-semibold text-[#0f172b]">
+                                {option.label}
+                              </span>
+                              <span className="mt-0.5 block text-[12px] font-medium text-[#62748e]">
+                                {option.description}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
