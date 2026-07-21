@@ -20,10 +20,9 @@ export function AppHeader({ onLogout }: { onLogout: () => void }) {
       <div ref={ref} className="absolute right-[12px] top-0 h-full flex items-center">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1 h-[44px] px-2 rounded-[8px] hover:bg-[#f9fafb] transition-colors"
+          className="flex h-[48px] w-[178px] items-center justify-end rounded-[8px] bg-transparent pr-2 transition-colors hover:bg-[#f9fafb]/70"
           aria-label="Open profile menu"
         >
-          <div className="w-[180px]" aria-hidden />
           <ChevronDown
             className={`w-4 h-4 text-[#90a1b9] transition-transform ${open ? "rotate-180" : ""}`}
           />
