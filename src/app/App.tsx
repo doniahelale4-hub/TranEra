@@ -261,7 +261,7 @@ export default function App() {
   const [emptyImportOpen, setEmptyImportOpen] = useState(false);
   const [selectedImportSource, setSelectedImportSource] = useState<ImportSource>("routes");
   const [search, setSearch] = useState("");
-  const [view, setView] = useState<"types" | "configure" | "map" | "settings" | "dashboard">("types");
+  const [view, setView] = useState<"types" | "configure" | "map" | "settings" | "dashboard" | "packets">("types");
   const [authed, setAuthed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const activeRoute = routes.find((r) => r.selected);
@@ -343,14 +343,29 @@ export default function App() {
         onLogout={handleLogout}
         onNav={(k) => {
           if (k === "settings") setView("settings");
-          else if (k === "routes" || k === "uploads") setView("types");
+          else if (k === "uploads") setView("packets");
+          else if (k === "routes") setView("types");
+        }}
+      />
+    );
+  }
+
+  if (view === "packets") {
+    return (
+      <ReceivedPacketsScreen
+        onLogout={handleLogout}
+        onNav={(k) => {
+          if (k === "dashboard") setView("dashboard");
+          else if (k === "routes") setView("types");
+          else if (k === "settings") setView("settings");
+          else setView("packets");
         }}
       />
     );
   }
 
   if (view === "types") {
-    return <RouteTypesScreen onPick={() => setView("configure")} onSettings={() => setView("settings")} onLogout={handleLogout} onDashboard={() => setView("dashboard")} />;
+    return <RouteTypesScreen onPick={() => setView("configure")} onSettings={() => setView("settings")} onLogout={handleLogout} onDashboard={() => setView("dashboard")} onPackets={() => setView("packets")} />;
   }
 
   return (
@@ -591,6 +606,17 @@ type Session = {
   uploaded?: boolean;
 };
 
+type ReceivedPacket = {
+  meter: string;
+  time: string;
+  protocol: "OMS" | "SSRF";
+  signal: number;
+  antenna: "Antenna 1" | "Antenna 2";
+  lat: number;
+  lon: number;
+  data: string;
+};
+
 const sampleRouteSessions: Session[] = [
   { code: "HM1FB9", start: "16 Oct 2024 · 08:12", end: "16 Oct 2024 · 11:47", total: 214, route: 198, nonRoute: 16 },
   { code: "T6BCHJ", start: "17 Oct 2024 · 07:30", end: "17 Oct 2024 · 10:05", total: 198, route: 188, nonRoute: 10, uploaded: true },
@@ -603,6 +629,21 @@ const sampleRouteSessions: Session[] = [
   { code: "D5XQWP", start: "24 Oct 2024 · 07:58", end: "24 Oct 2024 · 11:14", total: 267, route: 244, nonRoute: 23, uploaded: true },
   { code: "V1ZJHE", start: "25 Oct 2024 · 08:33", end: "25 Oct 2024 · 12:01", total: 293, route: 270, nonRoute: 23 },
 ];
+
+const receivedPackets: ReceivedPacket[] = Array.from({ length: 42 }, (_, i) => {
+  const meters = ["23122814", "07039420", "02400081", "06754610", "10098141", "57310028", "02400452", "61342800", "07039419"];
+  const hex = "4E44655E1428122301077A001040059AC9EA89EE3EBFB59830C94240AF29123A52034099CD3FEB5E3D619A9B8C859998";
+  return {
+    meter: meters[i % meters.length],
+    time: `2024-10-16 09:${String(30 + Math.floor(i / 2)).padStart(2, "0")}:${String((40 + i * 3) % 60).padStart(2, "0")}`,
+    protocol: i % 3 === 0 ? "SSRF" : "OMS",
+    signal: -58 - (i % 18),
+    antenna: i % 2 === 0 ? "Antenna 1" : "Antenna 2",
+    lat: i % 5 === 0 ? 24.7136 + i * 0.0001 : 0,
+    lon: i % 5 === 0 ? 46.6753 + i * 0.0001 : 0,
+    data: `${hex}${String(i).padStart(2, "0")}A${hex.slice(0, 42)}`,
+  };
+});
 
 type UploadMethod = "sftp" | "manager";
 type SessionConfirmAction =
@@ -2354,7 +2395,7 @@ function WaterDropLoader({ label = "Preparing route", sub = "Calibrating sensors
   );
 }
 
-function RouteTypesScreen({ onPick, onSettings, onLogout, onDashboard }: { onPick: (type: string) => void; onSettings: () => void; onLogout: () => void; onDashboard?: () => void }) {
+function RouteTypesScreen({ onPick, onSettings, onLogout, onDashboard, onPackets }: { onPick: (type: string) => void; onSettings: () => void; onLogout: () => void; onDashboard?: () => void; onPackets?: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const types = [
@@ -2638,6 +2679,7 @@ function RouteTypesScreen({ onPick, onSettings, onLogout, onDashboard }: { onPic
         onNav={(k) => {
           if (k === "settings") onSettings();
           else if (k === "dashboard") onDashboard?.();
+          else if (k === "uploads") onPackets?.();
         }}
       />
 
@@ -3268,6 +3310,212 @@ function RouteSettingSelect({ label, value, options }: { label: string; value: s
       >
         {options.map((o) => <option key={o}>{o}</option>)}
       </select>
+    </div>
+  );
+}
+
+function ReceivedPacketsScreen({
+  onLogout,
+  onNav,
+}: {
+  onLogout: () => void;
+  onNav: (k: NavKey) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [protocol, setProtocol] = useState<"all" | "OMS" | "SSRF">("all");
+  const [autoUpdate, setAutoUpdate] = useState(true);
+
+  const filteredPackets = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return receivedPackets.filter((packet) => {
+      const matchesProtocol = protocol === "all" || packet.protocol === protocol;
+      const matchesQuery =
+        !q ||
+        packet.meter.toLowerCase().includes(q) ||
+        packet.data.toLowerCase().includes(q) ||
+        packet.antenna.toLowerCase().includes(q);
+      return matchesProtocol && matchesQuery;
+    });
+  }, [query, protocol]);
+
+  const omsCount = receivedPackets.filter((packet) => packet.protocol === "OMS").length;
+  const ssrfCount = receivedPackets.length - omsCount;
+  const averageSignal = Math.round(receivedPackets.reduce((sum, packet) => sum + packet.signal, 0) / receivedPackets.length);
+
+  function exportPackets() {
+    const headers = ["meter", "date", "protocol", "signal_dbm", "antenna", "position_lat", "position_lon", "data"];
+    const rows = filteredPackets.map((packet) =>
+      [
+        packet.meter,
+        packet.time,
+        packet.protocol,
+        `${packet.signal}`,
+        packet.antenna,
+        packet.lat ? packet.lat.toFixed(6) : "0",
+        packet.lon ? packet.lon.toFixed(6) : "0",
+        packet.data,
+      ].map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")
+    );
+    const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `received-packets-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-[#f3f6fb] text-slate-900 pb-28">
+      <div className="h-[62px]">
+        <AppHeader onLogout={onLogout} />
+      </div>
+
+      <main className="max-w-[1280px] mx-auto px-6 pt-6">
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Received Packets</h1>
+            <p className="mt-1 text-sm text-slate-500">Review live receiver packets, inspect raw data, and export filtered results.</p>
+          </div>
+          <button
+            type="button"
+            onClick={exportPackets}
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <FileDown className="h-4 w-4" strokeWidth={1.8} />
+            Export CSV
+          </button>
+        </div>
+
+        <div className="grid grid-cols-4 gap-3 mb-4">
+          <PacketStat icon={Radio} label="Total packets" value={fmt(receivedPackets.length)} tone="blue" />
+          <PacketStat icon={Wifi} label="OMS received" value={fmt(omsCount)} tone="emerald" />
+          <PacketStat icon={Satellite} label="SSRF received" value={fmt(ssrfCount)} tone="amber" />
+          <PacketStat icon={TrendingUp} label="Avg signal" value={`${averageSignal} dBm`} tone="cyan" />
+        </div>
+
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search meter number, antenna, or raw data..."
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
+            <div className="flex h-10 rounded-xl border border-slate-200 bg-slate-50 p-1">
+              {(["all", "OMS", "SSRF"] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setProtocol(item)}
+                  className={`rounded-lg px-3 text-xs font-semibold transition ${
+                    protocol === item ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {item === "all" ? "All" : item}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setAutoUpdate((value) => !value)}
+              className={`flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-semibold transition ${
+                autoUpdate ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${autoUpdate ? "bg-emerald-500" : "bg-slate-300"}`} />
+              Auto update
+            </button>
+
+            <button
+              type="button"
+              className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.8} />
+              Refresh
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-4 py-2.5 text-xs text-slate-500">
+            <span>Showing <span className="font-semibold text-slate-900">{filteredPackets.length}</span> packets</span>
+            <span>Next refresh: 2026-05-03 09:45:00</span>
+          </div>
+
+          <div className="max-h-[calc(100vh-330px)] overflow-auto">
+            <table className="min-w-[1100px] w-full text-left text-xs">
+              <thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_#e2e8f0]">
+                <tr className="text-[11px] uppercase tracking-[0.08em] text-slate-500">
+                  <th className="w-10 px-4 py-3"><input type="checkbox" className="h-3.5 w-3.5 rounded border-slate-300 accent-blue-600" /></th>
+                  <th className="px-3 py-3 font-semibold">Meter number</th>
+                  <th className="px-3 py-3 font-semibold">Date</th>
+                  <th className="px-3 py-3 font-semibold">Protocol</th>
+                  <th className="px-3 py-3 font-semibold">Signal</th>
+                  <th className="px-3 py-3 font-semibold">Antenna</th>
+                  <th className="px-3 py-3 font-semibold">Position</th>
+                  <th className="px-3 py-3 font-semibold">Data</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredPackets.map((packet, index) => (
+                  <tr key={`${packet.meter}-${packet.time}-${index}`} className="transition-colors hover:bg-slate-50">
+                    <td className="px-4 py-3"><input type="checkbox" className="h-3.5 w-3.5 rounded border-slate-300 accent-blue-600" /></td>
+                    <td className="px-3 py-3 font-mono font-semibold text-slate-900">{packet.meter}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">{packet.time}</td>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${packet.protocol === "OMS" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                        {packet.protocol}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 font-semibold text-slate-700">{packet.signal} dBm</td>
+                    <td className="px-3 py-3 text-slate-600">{packet.antenna}</td>
+                    <td className="px-3 py-3 font-mono text-slate-500">{packet.lat ? `${packet.lat.toFixed(4)}, ${packet.lon.toFixed(4)}` : "0, 0"}</td>
+                    <td className="max-w-[460px] px-3 py-3">
+                      <div className="truncate font-mono text-[11px] text-slate-600" title={packet.data}>{packet.data}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <BottomNav active="uploads" onNav={onNav} />
+    </div>
+  );
+}
+
+function PacketStat({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  tone: "blue" | "cyan" | "emerald" | "amber";
+}) {
+  const tones = {
+    blue: "bg-blue-50 text-blue-600",
+    cyan: "bg-cyan-50 text-cyan-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    amber: "bg-amber-50 text-amber-600",
+  }[tone];
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${tones}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="text-2xl font-semibold tracking-tight text-slate-900">{value}</div>
+      <div className="mt-0.5 text-xs font-medium uppercase tracking-[0.08em] text-slate-500">{label}</div>
     </div>
   );
 }
