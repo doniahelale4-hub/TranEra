@@ -1706,14 +1706,14 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
         {!areasOpen ? (
           <button
             onClick={() => setAreasOpen(true)}
-            className="self-start flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-xl bg-white/95 backdrop-blur shadow-lg border border-slate-200 hover:bg-white"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/95 backdrop-blur shadow-lg border border-slate-200 hover:bg-white"
           >
             <span className="w-7 h-7 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">
               <ListFilter className="w-4 h-4" />
             </span>
             <span className="font-semibold text-sm text-slate-900">Areas</span>
             <span className="text-sm text-slate-400">·</span>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-slate-500 truncate">
               {selectedAreas.size} selected
             </span>
           </button>
