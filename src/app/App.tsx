@@ -696,9 +696,6 @@ function RouteSessions({ route }: { route: Route }) {
     setUploadMenuOpen(false);
   }, [route.name, route.collected]);
 
-  const routeId = `407${route.code.replace(/\D/g, "").padStart(2, "0")}`;
-  const routeCode = (route.meta.match(/Code\s+(\S+)/)?.[1]) ?? "EN9RYBS805";
-
   const allChecked = sessions.length > 0 && checked.size === sessions.length;
   const someChecked = checked.size > 0;
   const selectedSessions = sessions.filter((s) => checked.has(s.code));
@@ -930,25 +927,6 @@ function RouteSessions({ route }: { route: Route }) {
           </tbody>
         </table>
       </div>
-
-      <dl className="px-5 py-4 bg-slate-50/60 border-t border-slate-100 grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
-        <div>
-          <dt className="text-[10px] tracking-wider text-slate-400 uppercase">Route ID</dt>
-          <dd className="font-mono font-semibold text-slate-900 mt-0.5">{routeId}</dd>
-        </div>
-        <div>
-          <dt className="text-[10px] tracking-wider text-slate-400 uppercase">Route Code</dt>
-          <dd className="font-mono font-semibold text-slate-900 mt-0.5">{routeCode}</dd>
-        </div>
-        <div className="col-span-2">
-          <dt className="text-[10px] tracking-wider text-slate-400 uppercase">Route Name</dt>
-          <dd className="font-mono font-semibold text-slate-900 mt-0.5 truncate">{route.name}</dd>
-        </div>
-        <div className="col-span-2">
-          <dt className="text-[10px] tracking-wider text-slate-400 uppercase">User Name</dt>
-          <dd className="font-semibold text-slate-900 mt-0.5">USERNAME</dd>
-        </div>
-      </dl>
 
       <SessionConfirmDialog
         action={confirmAction}
