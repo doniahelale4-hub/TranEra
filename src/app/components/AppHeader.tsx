@@ -20,7 +20,7 @@ export function AppHeader({ onLogout }: { onLogout: () => void }) {
       <div ref={ref} className="absolute right-[12px] top-0 h-full flex items-center">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex h-[48px] w-[178px] items-center justify-end rounded-[8px] bg-transparent pr-2 transition-colors hover:bg-[#f9fafb]/70"
+          className="flex h-[48px] w-[178px] items-center justify-end rounded-[8px] bg-transparent pr-2"
           aria-label="Open profile menu"
         >
           <ChevronDown
