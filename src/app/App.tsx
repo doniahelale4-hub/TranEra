@@ -192,6 +192,8 @@ type Route = {
   selected?: boolean;
 };
 
+type ImportSource = "routes" | "manager" | "file" | "manual";
+
 const initialRoutes: Route[] = [];
 
 const managerRoutes: Route[] = [
@@ -256,11 +258,22 @@ export default function App() {
   const [routes, setRoutes] = useState<Route[]>(initialRoutes);
   const [modalOpen, setModalOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [selectedImportSource, setSelectedImportSource] = useState<ImportSource>("routes");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"types" | "configure" | "map" | "settings" | "dashboard">("types");
   const [authed, setAuthed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const activeRoute = routes.find((r) => r.selected);
+  const importOptions = [
+    { key: "routes", label: "Import Routes", description: "Choose source", icon: Download },
+    { key: "manager", label: "From Manager", description: "Sync over network", icon: Download },
+    { key: "file", label: "From file", description: "Upload .rt3 / .csv", icon: FileDown },
+    { key: "manual", label: "Manual entry", description: "Type route details", icon: FileText },
+  ] as const;
+  const selectedImportOption =
+    importOptions.find((option) => option.key === selectedImportSource) ?? importOptions[0];
+  const HeaderImportIcon = selectedImportOption.icon;
+  const importSourceOptions = importOptions.filter((option) => option.key !== "routes");
 
   const filteredRoutes = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -280,6 +293,12 @@ export default function App() {
         selected: r.name === name ? !r.selected : false,
       }))
     );
+  }
+
+  function chooseImportSource(source: ImportSource) {
+    setSelectedImportSource(source);
+    setImportOpen(false);
+    if (source === "manager") setModalOpen(true);
   }
 
   if (showOnboarding) {
@@ -365,20 +384,17 @@ export default function App() {
           <div className="relative shrink-0">
             <button
               onClick={() => setImportOpen((v) => !v)}
-              className="relative flex items-center gap-[4px] px-[14px] py-[10px] rounded-[8px] bg-white"
+              className={`relative flex items-center gap-[6px] px-[14px] py-[10px] rounded-[8px] bg-white transition-opacity ${
+                importOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+              }`}
               style={{
                 boxShadow: "inset 0px 0px 0px 1px rgba(10,13,18,0.18), inset 0px -2px 0px 0px rgba(10,13,18,0.05), 0px 1px 2px 0px rgba(10,13,18,0.05)",
                 border: "1px solid #d5d7da",
               }}
             >
-              {/* download icon */}
-              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                <path d="M14 10v2.667A1.333 1.333 0 0 1 12.667 14H3.333A1.333 1.333 0 0 1 2 12.667V10" stroke="#155DFC" strokeWidth="1.333" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4.667 6.667 8 10l3.333-3.333" stroke="#155DFC" strokeWidth="1.333" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M8 10V2" stroke="#155DFC" strokeWidth="1.333" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <HeaderImportIcon className="size-4 text-[#155DFC]" strokeWidth={1.75} />
               <span className="text-[14px] text-[#414651] leading-[20px] whitespace-nowrap">
-                Import Routes
+                {selectedImportOption.label}
               </span>
               <svg width="16" height="16" fill="none" viewBox="0 0 16 16" className={`transition-transform ${importOpen ? "rotate-180" : ""}`}>
                 <path d="M4 6l4 4 4-4" stroke="#90A1B9" strokeWidth="1.333" strokeLinecap="round" strokeLinejoin="round" />
@@ -389,36 +405,24 @@ export default function App() {
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setImportOpen(false)} />
                 <div className="absolute right-0 mt-2 w-64 bg-white border border-[#e2e8f0] rounded-xl shadow-lg z-20 overflow-hidden">
-                  <button
-                    onClick={() => { setImportOpen(false); setModalOpen(true); }}
-                    className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#f9f9f9]"
-                  >
-                    <Download className="w-4 h-4 mt-0.5 text-[#155DFC]" />
-                    <div>
-                      <div className="text-sm font-medium text-[#0f172b]">From Manager</div>
-                      <div className="text-xs text-[#62748e]">Sync over network</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setImportOpen(false)}
-                    className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#f9f9f9] border-t border-[#f1f5f9]"
-                  >
-                    <FileDown className="w-4 h-4 mt-0.5 text-[#155DFC]" />
-                    <div>
-                      <div className="text-sm font-medium text-[#0f172b]">From file</div>
-                      <div className="text-xs text-[#62748e]">Upload .rt3 / .csv</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setImportOpen(false)}
-                    className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#f9f9f9] border-t border-[#f1f5f9]"
-                  >
-                    <FileText className="w-4 h-4 mt-0.5 text-[#155DFC]" />
-                    <div>
-                      <div className="text-sm font-medium text-[#0f172b]">Manual entry</div>
-                      <div className="text-xs text-[#62748e]">Type route details</div>
-                    </div>
-                  </button>
+                  {importSourceOptions.map((option, index) => {
+                    const OptionIcon = option.icon;
+                    return (
+                      <button
+                        key={option.key}
+                        onClick={() => chooseImportSource(option.key)}
+                        className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[#f9f9f9] ${
+                          index > 0 ? "border-t border-[#f1f5f9]" : ""
+                        }`}
+                      >
+                        <OptionIcon className="w-4 h-4 mt-0.5 text-[#155DFC]" strokeWidth={1.75} />
+                        <div>
+                          <div className="text-sm font-medium text-[#0f172b]">{option.label}</div>
+                          <div className="text-xs text-[#62748e]">{option.description}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -435,7 +439,7 @@ export default function App() {
                 No routes available
               </h2>
               <p className="mx-auto mt-2 max-w-[360px] text-[14px] leading-5 text-[#62748e]">
-                Import routes from Manager to start meter reading. After importing, choose a route, review its sessions, then press Start Reading.
+                Choose an import method to add routes. After importing, choose a route, review its sessions, then press Start Reading.
               </p>
 
               <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
@@ -454,14 +458,30 @@ export default function App() {
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                className="mx-auto mt-6 flex h-[44px] items-center justify-center gap-2 rounded-[12px] bg-blue-600 px-5 text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
-              >
-                <Download className="size-4" strokeWidth={1.8} />
-                Import from Manager
-              </button>
+              <div className="mx-auto mt-6 grid max-w-[560px] gap-2 sm:grid-cols-3">
+                {importSourceOptions.map((option) => {
+                  const OptionIcon = option.icon;
+                  const isActive = selectedImportSource === option.key;
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => chooseImportSource(option.key)}
+                      className={`flex h-[48px] items-center justify-center gap-2 rounded-[12px] px-4 text-[13px] font-semibold shadow-sm transition-all ${
+                        isActive
+                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                          : "border border-[#dbe3ef] bg-white text-[#344054] hover:border-[#93c5fd] hover:bg-[#eff6ff]"
+                      }`}
+                    >
+                      <OptionIcon
+                        className={`size-4 ${isActive ? "text-white" : "text-[#155dfc]"}`}
+                        strokeWidth={1.8}
+                      />
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         ) : (
