@@ -497,7 +497,7 @@ export default function App() {
                     className="w-full flex items-center justify-center gap-2 py-[14px] rounded-[14px] bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
                   >
                     <Play className="w-5 h-5" fill="white" />
-                    Start route
+                    Start Reading
                   </button>
                 </div>
               </>
@@ -553,6 +553,19 @@ type Session = {
   nonRoute: number;
   uploaded?: boolean;
 };
+
+const sampleRouteSessions: Session[] = [
+  { code: "HM1FB9", start: "16 Oct 2024 · 08:12", end: "16 Oct 2024 · 11:47", total: 214, route: 198, nonRoute: 16 },
+  { code: "T6BCHJ", start: "17 Oct 2024 · 07:30", end: "17 Oct 2024 · 10:05", total: 198, route: 188, nonRoute: 10, uploaded: true },
+  { code: "K9PLZX", start: "18 Oct 2024 · 06:55", end: "18 Oct 2024 · 09:42", total: 276, route: 251, nonRoute: 25, uploaded: true },
+  { code: "Q3WVNM", start: "19 Oct 2024 · 07:48", end: "19 Oct 2024 · 12:10", total: 312, route: 289, nonRoute: 23 },
+  { code: "R7TUJD", start: "20 Oct 2024 · 08:05", end: "20 Oct 2024 · 11:33", total: 245, route: 227, nonRoute: 18, uploaded: true },
+  { code: "B4YHCS", start: "21 Oct 2024 · 07:22", end: "21 Oct 2024 · 10:48", total: 189, route: 174, nonRoute: 15 },
+  { code: "L2MKAV", start: "22 Oct 2024 · 09:10", end: "22 Oct 2024 · 13:25", total: 358, route: 331, nonRoute: 27, uploaded: true },
+  { code: "N8FRGT", start: "23 Oct 2024 · 06:40", end: "23 Oct 2024 · 09:55", total: 221, route: 205, nonRoute: 16 },
+  { code: "D5XQWP", start: "24 Oct 2024 · 07:58", end: "24 Oct 2024 · 11:14", total: 267, route: 244, nonRoute: 23, uploaded: true },
+  { code: "V1ZJHE", start: "25 Oct 2024 · 08:33", end: "25 Oct 2024 · 12:01", total: 293, route: 270, nonRoute: 23 },
+];
 
 type UploadMethod = "sftp" | "manager";
 type SessionConfirmAction =
@@ -630,22 +643,19 @@ function SessionConfirmDialog({
 }
 
 function RouteSessions({ route }: { route: Route }) {
-  const [sessions, setSessions] = useState<Session[]>([
-    { code: "HM1FB9", start: "16 Oct 2024 · 08:12", end: "16 Oct 2024 · 11:47", total: 214, route: 198, nonRoute: 16 },
-    { code: "T6BCHJ", start: "17 Oct 2024 · 07:30", end: "17 Oct 2024 · 10:05", total: 198, route: 188, nonRoute: 10, uploaded: true },
-    { code: "K9PLZX", start: "18 Oct 2024 · 06:55", end: "18 Oct 2024 · 09:42", total: 276, route: 251, nonRoute: 25, uploaded: true },
-    { code: "Q3WVNM", start: "19 Oct 2024 · 07:48", end: "19 Oct 2024 · 12:10", total: 312, route: 289, nonRoute: 23 },
-    { code: "R7TUJD", start: "20 Oct 2024 · 08:05", end: "20 Oct 2024 · 11:33", total: 245, route: 227, nonRoute: 18, uploaded: true },
-    { code: "B4YHCS", start: "21 Oct 2024 · 07:22", end: "21 Oct 2024 · 10:48", total: 189, route: 174, nonRoute: 15 },
-    { code: "L2MKAV", start: "22 Oct 2024 · 09:10", end: "22 Oct 2024 · 13:25", total: 358, route: 331, nonRoute: 27, uploaded: true },
-    { code: "N8FRGT", start: "23 Oct 2024 · 06:40", end: "23 Oct 2024 · 09:55", total: 221, route: 205, nonRoute: 16 },
-    { code: "D5XQWP", start: "24 Oct 2024 · 07:58", end: "24 Oct 2024 · 11:14", total: 267, route: 244, nonRoute: 23, uploaded: true },
-    { code: "V1ZJHE", start: "25 Oct 2024 · 08:33", end: "25 Oct 2024 · 12:01", total: 293, route: 270, nonRoute: 23 },
-  ]);
-
+  const hasRouteSessions = route.collected > 0;
+  const [sessions, setSessions] = useState<Session[]>(
+    hasRouteSessions ? sampleRouteSessions : []
+  );
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<SessionConfirmAction>(null);
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setSessions(route.collected > 0 ? sampleRouteSessions : []);
+    setChecked(new Set());
+    setUploadMenuOpen(false);
+  }, [route.name, route.collected]);
 
   const routeId = `407${route.code.replace(/\D/g, "").padStart(2, "0")}`;
   const routeCode = (route.meta.match(/Code\s+(\S+)/)?.[1]) ?? "EN9RYBS805";
@@ -805,6 +815,23 @@ function RouteSessions({ route }: { route: Route }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {sessions.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-6">
+                  <div className="rounded-[12px] border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-center">
+                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-white text-slate-400 shadow-sm">
+                      <Upload className="h-5 w-5" strokeWidth={1.75} />
+                    </div>
+                    <div className="text-[15px] font-semibold text-slate-900">
+                      Empty session
+                    </div>
+                    <div className="mt-1 text-[13px] leading-5 text-slate-500">
+                      No reading session exists for this route yet. Press Start Reading to create the first session.
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            )}
             {sessions.map((s) => {
               const isChecked = checked.has(s.code);
               return (
