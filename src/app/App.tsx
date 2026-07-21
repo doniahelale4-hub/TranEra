@@ -202,7 +202,7 @@ const managerRoutes: Route[] = [
     name: "RC03_202605_20260514",
     meta: "Code 9KX72LMN13 · 22 areas · Olaya sector",
     total: 8420,
-    collected: 0,
+    collected: 1630,
     startDate: "14 May 2026",
     endDate: "02 Jun 2026",
   },
