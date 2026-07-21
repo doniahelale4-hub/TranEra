@@ -380,7 +380,8 @@ export default function App() {
             </p>
           </div>
 
-          {/* Import from manager button */}
+          {/* Import routes button */}
+          {routes.length > 0 && (
           <div className="relative shrink-0">
             <button
               onClick={() => setImportOpen((v) => !v)}
@@ -427,6 +428,7 @@ export default function App() {
               </>
             )}
           </div>
+          )}
         </div>
 
         {routes.length === 0 ? (
