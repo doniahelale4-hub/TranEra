@@ -1903,7 +1903,7 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
             <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 overflow-hidden">
               <button
                 onClick={() => setPacketsOpen((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50/70"
+                className="w-full h-[52px] flex items-center justify-between px-4 hover:bg-slate-50/70"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="w-7 h-7 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -1942,7 +1942,7 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
             <button
               type="button"
               onClick={() => setPacketOverlayOpen(true)}
-              className="w-full bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 px-4 py-3 text-left hover:bg-slate-50/80 transition"
+              className="w-full h-[52px] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 px-4 text-left hover:bg-slate-50/80 transition"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -1951,9 +1951,13 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
                   </span>
                   <span className="font-semibold text-sm text-slate-900">Live pkts</span>
                 </div>
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                  {receivedPackets.length}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-[11px] text-emerald-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {receivedPackets.length}
+                  </span>
+                  <ChevronDown className="w-4 h-4 -rotate-90 text-slate-400" />
+                </div>
               </div>
             </button>
           </div>
