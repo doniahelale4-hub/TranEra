@@ -296,13 +296,13 @@ export function ExpandableRoutesList({ routes, search, onSearch, onSelect }: Pro
                 key={r.name}
                 className={`relative rounded-[14px] w-full overflow-hidden group shrink-0 transition-[background-color,box-shadow,border-color] duration-200 ease-out ${
                   isChecked
-                    ? "bg-gradient-to-br from-[#eff6ff] to-[#f5f9ff]"
+                    ? "bg-[#f4f8ff]"
                     : isSelected
-                    ? "bg-gradient-to-br from-[#eff6ff] to-[#f5f9ff]"
+                    ? "bg-[#f4f8ff]"
                     : "bg-white hover:shadow-[0_2px_6px_-2px_rgba(15,23,43,0.08)]"
                 }`}
                 style={{
-                  boxShadow: isChecked || isSelected ? "0 0 0 1.5px #60a5fa" : undefined,
+                  boxShadow: isChecked || isSelected ? "0 0 0 2px #60a5fa" : undefined,
                 }}
               >
                 {/* border overlay */}
@@ -315,7 +315,9 @@ export function ExpandableRoutesList({ routes, search, onSearch, onSelect }: Pro
 
                 {/* Collapsed row */}
                 <button
-                  className="flex flex-row items-center justify-between w-full min-h-[78px] px-4 py-3 text-left relative"
+                  className={`flex flex-row items-center justify-between w-full text-left relative ${
+                    isOpen || isSelected ? "min-h-[92px] px-5 py-4" : "min-h-[78px] px-4 py-3"
+                  }`}
                   onClick={() => {
                     if (selectMode) {
                       toggleCheck(r.name);
@@ -343,18 +345,20 @@ export function ExpandableRoutesList({ routes, search, onSearch, onSelect }: Pro
                   )}
 
                   {/* Left: code badge + name/meta */}
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className={`flex items-center min-w-0 flex-1 ${isOpen || isSelected ? "gap-5" : "gap-3"}`}>
                     <div
-                      className={`relative rounded-[10px] shrink-0 size-11 flex items-center justify-center transition-all duration-200 ${
+                      className={`relative rounded-[12px] shrink-0 flex items-center justify-center transition-all duration-200 ${
+                        isOpen || isSelected ? "size-[58px]" : "size-11"
+                      } ${
                         isChecked || isSelected
-                          ? "bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe]"
+                          ? "bg-[#d7e8ff]"
                           : "bg-[#f1f5f9] group-hover:bg-[#e2e8f0]"
                       }`}
                     >
                       <span
-                        className={`font-semibold text-[12px] leading-[16px] transition-colors ${
+                        className={`font-semibold transition-colors ${
                           isChecked || isSelected ? "text-[#1d4ed8]" : "text-[#45556c]"
-                        }`}
+                        } ${isOpen || isSelected ? "text-[16px] leading-5" : "text-[12px] leading-[16px]"}`}
                       >
                         {r.code}
                       </span>
@@ -368,14 +372,20 @@ export function ExpandableRoutesList({ routes, search, onSearch, onSelect }: Pro
                     </div>
                     <div className="flex flex-col gap-[2px] min-w-0 flex-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <p className="font-semibold text-[15px] leading-5 text-[#0f172b] tracking-[-0.15px] truncate">
+                        <p className={`font-semibold text-[#0f172b] tracking-[-0.15px] truncate ${
+                          isOpen || isSelected ? "text-[20px] leading-7" : "text-[15px] leading-5"
+                        }`}>
                           {r.name}
                         </p>
-                        <span className={`hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider shrink-0 ${statusStyle}`}>
+                        <span className={`hidden sm:inline-flex items-center rounded-full font-semibold uppercase tracking-wider shrink-0 ${
+                          isOpen || isSelected ? "px-2.5 py-1 text-[11px]" : "px-1.5 py-0.5 text-[10px]"
+                        } ${statusStyle}`}>
                           {status}
                         </span>
                       </div>
-                      <p className="font-medium text-[13px] leading-[18px] text-[#62748e] tracking-[-0.1px] truncate">
+                      <p className={`font-medium text-[#62748e] tracking-[-0.1px] truncate ${
+                        isOpen || isSelected ? "text-[16px] leading-6" : "text-[13px] leading-[18px]"
+                      }`}>
                         {r.meta}
                       </p>
                       {/* Mini progress (collapsed state only) */}
@@ -398,10 +408,14 @@ export function ExpandableRoutesList({ routes, search, onSearch, onSelect }: Pro
                   {/* Right: total + chevron (hide chevron in select mode) */}
                   <div className="flex items-center gap-2.5 shrink-0 ml-3">
                     <div className="flex flex-col items-end">
-                      <p className="font-semibold text-[18px] leading-[22px] text-[#0f172b] tracking-[-0.2px] tabular-nums">
+                      <p className={`font-semibold text-[#0f172b] tracking-[-0.2px] tabular-nums ${
+                        isOpen || isSelected ? "text-[28px] leading-8" : "text-[18px] leading-[22px]"
+                      }`}>
                         {fmt(r.total)}
                       </p>
-                      <p className="font-medium text-[9px] leading-3 text-[#90a1b9] tracking-[0.5px] uppercase">
+                      <p className={`font-medium text-[#90a1b9] uppercase ${
+                        isOpen || isSelected ? "text-[13px] leading-5 tracking-[1.4px]" : "text-[9px] leading-3 tracking-[0.5px]"
+                      }`}>
                         Total meters
                       </p>
                     </div>
@@ -434,15 +448,15 @@ export function ExpandableRoutesList({ routes, search, onSearch, onSelect }: Pro
                     }`}
                   >
                     <div className="overflow-hidden">
-                      <div className="border-t border-[#e2e8f0]/70 mx-4 mb-4 pt-4 grid grid-cols-3 gap-4">
+                      <div className="border-t border-[#dbe5f2] mx-5 mb-5 pt-5 grid grid-cols-3 gap-6">
                         {/* Collected */}
                         <div>
-                          <div className="text-[10px] tracking-wider text-[#90a1b9] uppercase font-semibold">
+                          <div className="text-[12px] tracking-[1.4px] text-[#90a1b9] uppercase font-semibold">
                             Collected
                           </div>
-                          <div className="flex items-baseline gap-1.5 mt-1">
-                            <span className="text-[15px] font-semibold text-[#0f172b] tabular-nums">{fmt(r.collected)}</span>
-                            <span className="text-xs text-[#90a1b9] tabular-nums">/ {fmt(r.total)}</span>
+                          <div className="flex items-baseline gap-2 mt-2">
+                            <span className="text-[20px] font-semibold text-[#0f172b] tabular-nums">{fmt(r.collected)}</span>
+                            <span className="text-[16px] text-[#90a1b9] tabular-nums">/ {fmt(r.total)}</span>
                             <span className={`ml-auto text-xs font-semibold tabular-nums ${pct >= 100 ? "text-emerald-600" : pct > 0 ? "text-amber-600" : "text-[#90a1b9]"}`}>{pct}%</span>
                           </div>
                           <div className="mt-2 h-1.5 w-full rounded-full bg-[#f1f5f9] overflow-hidden">
@@ -454,24 +468,24 @@ export function ExpandableRoutesList({ routes, search, onSearch, onSelect }: Pro
                         </div>
                         {/* Start date */}
                         <div>
-                          <div className="text-[10px] tracking-wider text-[#90a1b9] uppercase font-semibold">
+                          <div className="text-[12px] tracking-[1.4px] text-[#90a1b9] uppercase font-semibold">
                             Start date
                           </div>
-                          <div className="flex items-center gap-1.5 mt-1.5 text-[13px] text-[#45556c] font-medium">
-                            <span className="w-6 h-6 rounded-md bg-[#f1f5f9] flex items-center justify-center">
-                              <Calendar className="w-3.5 h-3.5 text-[#62748e]" />
+                          <div className="flex items-center gap-2.5 mt-2 text-[16px] text-[#45556c] font-medium">
+                            <span className="w-8 h-8 rounded-[10px] bg-[#f1f5f9] flex items-center justify-center">
+                              <Calendar className="w-4 h-4 text-[#62748e]" />
                             </span>
                             {r.startDate}
                           </div>
                         </div>
                         {/* End date */}
                         <div>
-                          <div className="text-[10px] tracking-wider text-[#90a1b9] uppercase font-semibold">
+                          <div className="text-[12px] tracking-[1.4px] text-[#90a1b9] uppercase font-semibold">
                             End date
                           </div>
-                          <div className="flex items-center gap-1.5 mt-1.5 text-[13px] text-[#45556c] font-medium">
-                            <span className="w-6 h-6 rounded-md bg-[#f1f5f9] flex items-center justify-center">
-                              <Calendar className="w-3.5 h-3.5 text-[#62748e]" />
+                          <div className="flex items-center gap-2.5 mt-2 text-[16px] text-[#45556c] font-medium">
+                            <span className="w-8 h-8 rounded-[10px] bg-[#f1f5f9] flex items-center justify-center">
+                              <Calendar className="w-4 h-4 text-[#62748e]" />
                             </span>
                             {r.endDate}
                           </div>
