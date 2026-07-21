@@ -192,53 +192,7 @@ type Route = {
   selected?: boolean;
 };
 
-const initialRoutes: Route[] = [
-  {
-    code: "RC12",
-    name: "RC12_202410_20241016",
-    meta: "Code EN9RYBS805 · 14 areas · Diriyah / Laban sector",
-    total: 1967,
-    collected: 412,
-    startDate: "16 Oct 2024",
-    endDate: "30 Oct 2024",
-  },
-  {
-    code: "RC12",
-    name: "RC12_202410_20241015",
-    meta: "Code BU9S5WSS7V · 38 areas · Al Malaz sector",
-    total: 11024,
-    collected: 0,
-    startDate: "15 Oct 2024",
-    endDate: "05 Nov 2024",
-  },
-  {
-    code: "RC01",
-    name: "RC01_202605_20260503",
-    meta: "Code 5W66J20ZYN · Full-city cycle",
-    total: 53730,
-    collected: 12480,
-    startDate: "03 May 2026",
-    endDate: "28 Jun 2026",
-  },
-  {
-    code: "RC03",
-    name: "RC03_202605_20260514",
-    meta: "Code 9KX72LMN13 · 22 areas · Olaya sector",
-    total: 8420,
-    collected: 1630,
-    startDate: "14 May 2026",
-    endDate: "02 Jun 2026",
-  },
-  {
-    code: "RC07",
-    name: "RC07_202605_20260510",
-    meta: "Code 4TY88QRS21 · 9 areas · Al Malaz",
-    total: 3210,
-    collected: 0,
-    startDate: "10 May 2026",
-    endDate: "20 May 2026",
-  },
-];
+const initialRoutes: Route[] = [];
 
 const managerRoutes: Route[] = [
   {
@@ -424,7 +378,7 @@ export default function App() {
                 <path d="M8 10V2" stroke="#155DFC" strokeWidth="1.333" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span className="text-[14px] text-[#414651] leading-[20px] whitespace-nowrap">
-                Import from manager
+                Import Routes
               </span>
               <svg width="16" height="16" fill="none" viewBox="0 0 16 16" className={`transition-transform ${importOpen ? "rotate-180" : ""}`}>
                 <path d="M4 6l4 4 4-4" stroke="#90A1B9" strokeWidth="1.333" strokeLinecap="round" strokeLinejoin="round" />
@@ -471,63 +425,103 @@ export default function App() {
           </div>
         </div>
 
-        {/* Content grid */}
-        <div
-          className="grid gap-[10px] mt-[18px]"
-          style={{ gridTemplateColumns: activeRoute ? "1fr 1fr" : "1fr 393px" }}
-        >
-          {/* Left: Available routes */}
-          <div>
-            <ExpandableRoutesList
-              routes={filteredRoutes}
-              search={search}
-              onSearch={setSearch}
-              onSelect={selectRoute}
-            />
-          </div>
+        {routes.length === 0 ? (
+          <div className="mt-[18px] min-h-[calc(100vh-230px)] rounded-[14px] border border-dashed border-[#cad5e2] bg-white flex items-center justify-center px-6 py-10">
+            <div className="max-w-[520px] text-center">
+              <div className="mx-auto flex size-[58px] items-center justify-center rounded-[16px] bg-[#eff6ff] text-[#155dfc]">
+                <Map className="size-7" strokeWidth={1.75} />
+              </div>
+              <h2 className="mt-5 text-[20px] font-semibold leading-7 text-[#0f172b]">
+                No routes available
+              </h2>
+              <p className="mx-auto mt-2 max-w-[360px] text-[14px] leading-5 text-[#62748e]">
+                Import routes from Manager to start meter reading. After importing, choose a route, review its sessions, then press Start Reading.
+              </p>
 
-          {/* Right: Sessions or empty state */}
-          <div className="flex flex-col gap-[10px]">
-            {activeRoute ? (
-              <>
-                <RouteSessions route={activeRoute} />
-                <div className="flex flex-col items-center gap-3">
-                  <button
-                    onClick={() => setView("map")}
-                    className="w-full flex items-center justify-center gap-2 py-[14px] rounded-[14px] bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
-                  >
-                    <Play className="w-5 h-5" fill="white" />
-                    Start Reading
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div
-                className="bg-white flex flex-col items-start p-[33px] rounded-[14px]"
-                style={{ border: "1px dashed #cad5e2" }}
+              <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
+                {[
+                  ["1", "Import routes", "Click Import Routes or use the button below."],
+                  ["2", "Select source", "Choose From Manager, file upload, or manual entry."],
+                  ["3", "Start reading", "Pick the route and begin collecting meters."],
+                ].map(([step, title, body]) => (
+                  <div key={step} className="rounded-[12px] border border-[#e2e8f0] bg-[#f8fafc] p-3">
+                    <div className="mb-2 flex size-6 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-[#155dfc] shadow-sm">
+                      {step}
+                    </div>
+                    <div className="text-[13px] font-semibold text-[#0f172b]">{title}</div>
+                    <div className="mt-1 text-[12px] leading-[17px] text-[#62748e]">{body}</div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="mx-auto mt-6 flex h-[44px] items-center justify-center gap-2 rounded-[12px] bg-blue-600 px-5 text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
               >
-                <div className="w-full flex justify-center">
-                  <div className="bg-[#f1f5f9] rounded-[14px] size-[48px] flex items-center justify-center">
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-                      <path d="M14.106 5.553c.278.139.584.211.894.211s.616-.072.894-.211l3.659-1.83c.153-.076.322-.112.492-.104.17.008.336.059.48.149.145.09.265.215.347.364.083.15.127.317.127.488V17.383c0 .186-.052.368-.15.526a1 1 0 0 1-.406.277l-4.553 2.277a2.013 2.013 0 0 1-1.788 0l-4.212-2.106a2.013 2.013 0 0 0-1.788 0L4.447 20.278a.893.893 0 0 1-1.32-.608.893.893 0 0 1-.127-.489V6.618c0-.186.052-.368.15-.526a1 1 0 0 1 .406-.368l4.553-2.277a2.013 2.013 0 0 1 1.788 0l3.209 1.106Z" stroke="#90A1B9" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M15 5.764V20.764M9 3.236V18.236" stroke="#90A1B9" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                <Download className="size-4" strokeWidth={1.8} />
+                Import from Manager
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="grid gap-[10px] mt-[18px]"
+            style={{ gridTemplateColumns: activeRoute ? "1fr 1fr" : "1fr 393px" }}
+          >
+            {/* Left: Available routes */}
+            <div>
+              <ExpandableRoutesList
+                routes={filteredRoutes}
+                search={search}
+                onSearch={setSearch}
+                onSelect={selectRoute}
+              />
+            </div>
+
+            {/* Right: Sessions or empty state */}
+            <div className="flex flex-col gap-[10px]">
+              {activeRoute ? (
+                <>
+                  <RouteSessions route={activeRoute} />
+                  <div className="flex flex-col items-center gap-3">
+                    <button
+                      onClick={() => setView("map")}
+                      className="w-full flex items-center justify-center gap-2 py-[14px] rounded-[14px] bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
+                    >
+                      <Play className="w-5 h-5" fill="white" />
+                      Start Reading
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div
+                  className="bg-white flex flex-col items-start p-[33px] rounded-[14px]"
+                  style={{ border: "1px dashed #cad5e2" }}
+                >
+                  <div className="w-full flex justify-center">
+                    <div className="bg-[#f1f5f9] rounded-[14px] size-[48px] flex items-center justify-center">
+                      <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path d="M14.106 5.553c.278.139.584.211.894.211s.616-.072.894-.211l3.659-1.83c.153-.076.322-.112.492-.104.17.008.336.059.48.149.145.09.265.215.347.364.083.15.127.317.127.488V17.383c0 .186-.052.368-.15.526a1 1 0 0 1-.406.277l-4.553 2.277a2.013 2.013 0 0 1-1.788 0l-4.212-2.106a2.013 2.013 0 0 0-1.788 0L4.447 20.278a.893.893 0 0 1-1.32-.608.893.893 0 0 1-.127-.489V6.618c0-.186.052-.368.15-.526a1 1 0 0 1 .406-.368l4.553-2.277a2.013 2.013 0 0 1 1.788 0l3.209 1.106Z" stroke="#90A1B9" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M15 5.764V20.764M9 3.236V18.236" stroke="#90A1B9" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="w-full pt-[12px]">
+                    <p className="text-[16px] font-semibold text-[#0f172b] tracking-[-0.31px] text-center w-full">
+                      Select a route
+                    </p>
+                  </div>
+                  <div className="w-full pt-[4px]">
+                    <p className="text-[14px] text-[#62748e] tracking-[-0.15px] text-center leading-[20px] w-full">
+                      Pick one from the available routes to see its sessions and start collecting.
+                    </p>
                   </div>
                 </div>
-                <div className="w-full pt-[12px]">
-                  <p className="text-[16px] font-semibold text-[#0f172b] tracking-[-0.31px] text-center w-full">
-                    Select a route
-                  </p>
-                </div>
-                <div className="w-full pt-[4px]">
-                  <p className="text-[14px] text-[#62748e] tracking-[-0.15px] text-center leading-[20px] w-full">
-                    Pick one from the available routes to see its sessions and start collecting.
-                  </p>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {modalOpen && (
