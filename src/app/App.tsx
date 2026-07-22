@@ -147,6 +147,7 @@ type Meter = {
   lastReading: number;
   lastSeen: string;
   status?: CheckpointStatus;
+  hasComment?: boolean;
   tHome?: number;
 };
 
@@ -1439,6 +1440,7 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
     () => new Set(areaList.map((a) => a.id))
   );
   const [selectedMeter, setSelectedMeter] = useState<Meter | null>(null);
+  const [meterComments, setMeterComments] = useState<Record<string, string>>({});
   const [areasOpen, setAreasOpen] = useState(false);
   const [packetsOpen, setPacketsOpen] = useState(false);
   const [meterFilters, setMeterFilters] = useState({
@@ -1453,10 +1455,12 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
     () =>
       checkpoints.map((c) => {
         const s = statuses[c.id] ?? "pending";
-        return { ...c, read: s === "collected", status: s };
+        return { ...c, read: s === "collected", status: s, hasComment: Boolean(meterComments[c.id]) };
       }),
-    [checkpoints, statuses],
+    [checkpoints, statuses, meterComments],
   );
+
+  const commentsCount = useMemo(() => Object.values(meterComments).filter(Boolean).length, [meterComments]);
 
   const visibleDots = useMemo(
     () =>
@@ -1499,7 +1503,7 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
             <Stat label="Total" value={fmt(total)} tone="slate" />
             <Stat label="Missed" value={fmt(missed)} tone="rose" />
             <Stat label="Collected" value={fmt(collected)} tone="emerald" />
-            <Stat label="Comments" value="0" tone="pink" />
+            <Stat label="Comments" value={fmt(commentsCount)} tone="pink" />
           </div>
         </div>
 
@@ -1896,7 +1900,17 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
 
         {/* Right column */}
         {selectedMeter ? (
-          <MeterDetails meter={selectedMeter} onClose={() => setSelectedMeter(null)} />
+          <MeterDetails
+            meter={selectedMeter}
+            initialComment={meterComments[selectedMeter.id] ?? ""}
+            onSaveComment={(comment) =>
+              setMeterComments((prev) => ({
+                ...prev,
+                [selectedMeter.id]: comment,
+              }))
+            }
+            onClose={() => setSelectedMeter(null)}
+          />
         ) : (
           <div className={`absolute top-4 right-4 w-64 flex flex-col gap-3 transition ${devicePanelOpen ? "z-0 pointer-events-none" : "z-10"}`}>
             {/* Live statistics - collapsible */}
@@ -2806,19 +2820,38 @@ function RouteTypesScreen({ onPick, onSettings, onLogout, onDashboard, onPackets
   );
 }
 
-function MeterDetails({ meter, onClose }: { meter: Meter; onClose: () => void }) {
+function MeterDetails({
+  meter,
+  initialComment,
+  onSaveComment,
+  onClose,
+}: {
+  meter: Meter;
+  initialComment: string;
+  onSaveComment: (comment: string) => void;
+  onClose: () => void;
+}) {
   const hcn = `0580${meter.id.slice(-7, -2)}${meter.id.slice(-2)}/1`;
   const signal = -55 - (parseInt(meter.id.slice(-2), 10) % 25);
   const [activeAction, setActiveAction] = useState<"comment" | "photo" | "manual" | null>(null);
   const [commentText, setCommentText] = useState("");
   const [manualRead, setManualRead] = useState("");
   const [photoName, setPhotoName] = useState("");
-  const [savedComment, setSavedComment] = useState("");
+  const [savedComment, setSavedComment] = useState(initialComment);
   const [savedManualRead, setSavedManualRead] = useState("");
   const [savedPhotoName, setSavedPhotoName] = useState("");
 
+  useEffect(() => {
+    setSavedComment(initialComment);
+    setCommentText(initialComment);
+  }, [initialComment, meter.id]);
+
   function saveAction() {
-    if (activeAction === "comment" && commentText.trim()) setSavedComment(commentText.trim());
+    if (activeAction === "comment" && commentText.trim()) {
+      const nextComment = commentText.trim();
+      setSavedComment(nextComment);
+      onSaveComment(nextComment);
+    }
     if (activeAction === "manual" && manualRead.trim()) setSavedManualRead(manualRead.trim());
     if (activeAction === "photo" && photoName.trim()) setSavedPhotoName(photoName.trim());
     setActiveAction(null);
@@ -2898,7 +2931,7 @@ function MeterDetails({ meter, onClose }: { meter: Meter; onClose: () => void })
               icon={MessageSquarePlus}
               label="Add comment"
               subtitle={savedComment ? "Comment added" : "Log an issue"}
-              tint="orange"
+              tint="pink"
               active={activeAction === "comment"}
               onClick={() => setActiveAction((active) => active === "comment" ? null : "comment")}
             />
@@ -2992,7 +3025,7 @@ function MeterDetails({ meter, onClose }: { meter: Meter; onClose: () => void })
           {(savedComment || savedManualRead || savedPhotoName) && (
             <div className="mt-3 space-y-1.5">
               {savedComment && (
-                <div className="rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-800">
+                <div className="rounded-lg bg-pink-50 px-3 py-2 text-xs text-pink-700">
                   Comment: {savedComment}
                 </div>
               )}
@@ -3041,7 +3074,7 @@ function StatCard({
 
 const ACTION_TINTS = {
   blue: "bg-blue-50 text-blue-600",
-  orange: "bg-orange-50 text-orange-600",
+  pink: "bg-pink-50 text-pink-500",
   emerald: "bg-emerald-50 text-emerald-600",
   slate: "bg-slate-100 text-slate-600",
 };
@@ -3241,13 +3274,21 @@ function FakeMap({
         {dots.map((d) => {
           const isSel = d.id === selectedId;
           const s = d.status ?? "pending";
-          const fill = s === "collected" ? "#10b981" : s === "missed" ? "#ef4444" : "#facc15";
+          const fill = d.hasComment
+            ? "#ec4899"
+            : s === "collected"
+            ? "#10b981"
+            : s === "missed"
+            ? "#ef4444"
+            : "#111827";
           const glow =
-            s === "collected"
+            d.hasComment
+              ? "0 0 8px rgba(236,72,153,0.65)"
+              : s === "collected"
               ? "0 0 8px rgba(16,185,129,0.7)"
               : s === "missed"
               ? "0 0 8px rgba(239,68,68,0.6)"
-              : "0 0 6px rgba(250,204,21,0.55)";
+              : "0 0 6px rgba(17,24,39,0.45)";
           return (
             <div
               key={d.id}
