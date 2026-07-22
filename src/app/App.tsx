@@ -353,14 +353,14 @@ export default function App() {
 
   if (view === "packets") {
     return (
-      <ReceivedPacketsScreen
-        onLogout={handleLogout}
-        onNav={(k) => {
-          if (k === "dashboard") setView("dashboard");
-          else if (k === "routes") setView("types");
-          else if (k === "settings") setView("settings");
-          else setView("packets");
+      <SettingsScreen
+        onNav={(v) => {
+          if (v === "dashboard") setView("dashboard");
+          else if (v === "settings") setView("settings");
+          else setView("types");
         }}
+        activeNav="uploads"
+        onLogout={handleLogout}
       />
     );
   }
@@ -3691,6 +3691,7 @@ function StatLine({ label, value, bold }: { label: string; value: string; bold?:
 type SettingsTab = "general" | "database" | "sync" | "account" | "about";
 
 function SettingsScreen({ onNav, activeNav, onLogout }: { onNav: (v: string) => void; activeNav: string; onLogout: () => void }) {
+  const pageName = activeNav === "uploads" ? "uploads" : "settings";
   return (
     <div className="min-h-screen w-full bg-[#f3f4f6] text-slate-900 flex flex-col">
       <div className="h-[62px]">
@@ -3701,7 +3702,7 @@ function SettingsScreen({ onNav, activeNav, onLogout }: { onNav: (v: string) => 
           <div className="text-[120px] leading-none tracking-tight text-blue-600 font-bold">404</div>
           <h1 className="mt-4 text-2xl font-semibold text-slate-900">Page not found</h1>
           <p className="mt-3 text-slate-600">
-            The settings page you're looking for doesn't exist or has been moved.
+            The {pageName} page you're looking for doesn't exist or has been moved.
           </p>
           <button
             onClick={() => onNav("types")}
