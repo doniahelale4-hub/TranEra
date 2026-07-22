@@ -24,6 +24,10 @@ export function LoginScreen({ onLogin, onOnboarding }: Props) {
       setError("Enter your technician ID and password");
       return;
     }
+    if (username.trim() !== "Doniahelale" || password !== "1234") {
+      setError("Invalid Technician ID or password");
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
@@ -146,7 +150,7 @@ export function LoginScreen({ onLogin, onOnboarding }: Props) {
               icon={User}
               label="Technician ID"
               type="text"
-              placeholder="e.g. TECH-04821"
+              placeholder="Doniahelale"
               value={username}
               onChange={setUsername}
               autoFocus
@@ -208,14 +212,6 @@ export function LoginScreen({ onLogin, onOnboarding }: Props) {
                   Sign in <ArrowRight className="w-4 h-4" />
                 </>
               )}
-            </button>
-
-            <button
-              type="button"
-              onClick={onLogin}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-sm transition-colors"
-            >
-              Continue offline (cached routes)
             </button>
 
             {onOnboarding && (
