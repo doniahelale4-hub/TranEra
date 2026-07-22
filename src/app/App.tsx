@@ -63,6 +63,22 @@ const navItems: { key: NavKey; icon: typeof Map; label: string }[] = [
   { key: "settings", icon: Settings, label: "Settings" },
 ];
 
+function MobileUnavailable() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f3f6fb] px-6 text-center text-slate-900 md:hidden">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+          <LayoutGrid className="h-7 w-7" strokeWidth={1.8} />
+        </div>
+        <h1 className="mt-5 text-xl font-semibold">Please open on desktop or tablet</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Mobile version is not available yet.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function BottomNav({ active, onNav }: { active: NavKey; onNav: (k: NavKey) => void }) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
@@ -256,6 +272,12 @@ const deviceRows: { label: string; value: string; dot?: "green" | null }[] = [
 ];
 
 export default function App() {
+  const renderShell = (content: React.ReactNode) => (
+    <>
+      <MobileUnavailable />
+      <div className="hidden md:block">{content}</div>
+    </>
+  );
   const [routes, setRoutes] = useState<Route[]>(initialRoutes);
   const [modalOpen, setModalOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -305,11 +327,11 @@ export default function App() {
   }
 
   if (showOnboarding) {
-    return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
+    return renderShell(<OnboardingScreen onComplete={() => setShowOnboarding(false)} />);
   }
 
   if (!authed) {
-    return (
+    return renderShell(
       <LoginScreen
         onLogin={() => setAuthed(true)}
         onOnboarding={() => setShowOnboarding(true)}
@@ -318,7 +340,7 @@ export default function App() {
   }
 
   if (view === "map" && activeRoute) {
-    return <MapScreen route={activeRoute} onBack={() => setView("configure")} />;
+    return renderShell(<MapScreen route={activeRoute} onBack={() => setView("configure")} />);
   }
 
   const handleLogout = () => {
@@ -328,7 +350,7 @@ export default function App() {
   };
 
   if (view === "settings") {
-    return (
+    return renderShell(
       <SettingsScreen
         onNav={(v) => setView(v as "types" | "configure" | "settings")}
         activeNav="settings"
@@ -338,7 +360,7 @@ export default function App() {
   }
 
   if (view === "dashboard") {
-    return (
+    return renderShell(
       <DashboardScreen
         routes={routes}
         onLogout={handleLogout}
@@ -352,7 +374,7 @@ export default function App() {
   }
 
   if (view === "packets") {
-    return (
+    return renderShell(
       <SettingsScreen
         onNav={(v) => {
           if (v === "dashboard") setView("dashboard");
@@ -366,10 +388,10 @@ export default function App() {
   }
 
   if (view === "types") {
-    return <RouteTypesScreen onPick={() => setView("configure")} onSettings={() => setView("settings")} onLogout={handleLogout} onDashboard={() => setView("dashboard")} onPackets={() => setView("packets")} />;
+    return renderShell(<RouteTypesScreen onPick={() => setView("configure")} onSettings={() => setView("settings")} onLogout={handleLogout} onDashboard={() => setView("dashboard")} onPackets={() => setView("packets")} />);
   }
 
-  return (
+  return renderShell(
     <div className="min-h-screen w-full bg-[#f9f9f9] text-slate-900">
       <div className="h-[62px]">
         <AppHeader onLogout={handleLogout} />
