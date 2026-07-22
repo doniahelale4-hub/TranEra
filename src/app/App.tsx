@@ -1328,8 +1328,8 @@ function MapScreen({ route, onBack }: { route: Route; onBack: () => void }) {
     [statuses],
   );
   const missed = useMemo(
-    () => Object.values(statuses).filter((s) => s === "missed").length,
-    [statuses],
+    () => total - collected,
+    [total, collected],
   );
   const remaining = total - collected - missed;
   const pct = total ? Math.round((collected / total) * 100) : 0;
@@ -3280,7 +3280,7 @@ function FakeMap({
             ? "#10b981"
             : s === "missed"
             ? "#ef4444"
-            : "#111827";
+            : "#ef4444";
           const glow =
             d.hasComment
               ? "0 0 8px rgba(236,72,153,0.65)"
@@ -3288,7 +3288,7 @@ function FakeMap({
               ? "0 0 8px rgba(16,185,129,0.7)"
               : s === "missed"
               ? "0 0 8px rgba(239,68,68,0.6)"
-              : "0 0 6px rgba(17,24,39,0.45)";
+              : "0 0 8px rgba(239,68,68,0.55)";
           return (
             <div
               key={d.id}
